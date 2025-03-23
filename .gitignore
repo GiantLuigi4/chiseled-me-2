@@ -1,0 +1,8 @@
+.direnv
+.gradle
+.idea
+.vscode
+build
+
+# a symlink to build/run/.mixin-out in my ws
+mixin-out
