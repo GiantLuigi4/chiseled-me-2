@@ -1,61 +1,62 @@
-buildscript {
-    repositories {
-        maven { url = 'https://maven.necauqua.dev' }
-        mavenLocal()
-    }
-    dependencies {
-        classpath 'dev.necauqua:necauqua-mod:0.11.0'
+plugins {
+    id 'net.minecraftforge.gradle'
+    id 'org.spongepowered.mixin'
+    id 'org.parchmentmc.librarian.forgegradle'
+}
+
+//ext {
+//    thisId = "chiseled-me-2"
+//}
+String thisId = "chiseled-me-2"
+
+mixin {
+    add(sourceSets.main, "${thisId}.refmap.json")
+
+    config("${thisId}.mixins.json")
+}
+
+minecraft {
+    mappings channel: 'parchment', version: "${parchment_version}-${parchment_minecraft}"
+//    mappings channel: 'official', version: "${minecraft_version}"
+    copyIdeResources = true
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                "${thisId}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+        }
+        data {
+            workingDirectory project.file('run-data')
+            args '--mod', "${thisId}", '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+        server {
+            args '--nogui'
+        }
     }
 }
 
-apply plugin: 'dev.necauqua.nmod'
-
-nmod {
-    curseID = '250075'
-    mcversion = '1.16.*'
-    forge = '1.16.5-36.2.34'
-    mappings = '1.16.5'
-    mixin = '0.8.5'
-
-    githubRepo = null
-}
-
-// repositories {
-//     maven {
-//         url 'https://dvs1.progwml6.com/files/maven'
-//     }
-//     maven {
-//         url "https://cursemaven.com"
-//         content {
-//             includeGroup "curse.maven"
-//         }
-//     }
-// }
+sourceSets.main.resources.srcDir 'src/generated/resources'
 
 dependencies {
-    implementation project(path: ':mira', configuration: 'api')
-
-    // todo remove non-api dep
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     implementation project(':mira')
-
-    // implementation fg.deobf("curse.maven:jei-238222:3590083")
-    // implementation fg.deobf("curse.maven:chiselandbits-231095:3593643")
+    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 }
 
-// needed to load mira minecraft block
-evaluationDependsOn(':mira')
-
-minecraft.runs {
-    client {
-        args '--mixin', 'mira.mixins.json'
-        mods.addAll(project(':mira').minecraft.runs.client.mods)
-    }
-    server {
-        args '--mixin', 'mira.mixins.json'
-        mods.addAll(project(':mira').minecraft.runs.server.mods)
-    }
+jar {
+    finalizedBy('reobfJar')
+    manifest.attributes([
+            "MixinConfigs": "${thisId}.mixins.json"
+    ])
 }
-
-// it looks like because mira has apiClasses FG thinks that
-// cm2 also should have apiClasses, so we work around that
-tasks.register('apiClasses')

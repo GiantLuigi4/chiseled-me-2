@@ -1,23 +1,64 @@
-buildscript {
-    repositories {
-        maven { url = 'https://maven.necauqua.dev' }
-        mavenLocal()
-    }
-    dependencies {
-        classpath 'dev.necauqua:necauqua-mod:0.11.0'
+plugins {
+    id 'net.minecraftforge.gradle'
+    id 'org.spongepowered.mixin'
+    id 'org.parchmentmc.librarian.forgegradle'
+}
+
+//ext {
+//    thisId = "mira"
+//}
+String thisId = "mira"
+
+mixin {
+    add(sourceSets.main, "${thisId}.refmap.json")
+
+    config("${thisId}.mixins.json")
+}
+
+minecraft {
+    mappings channel: 'parchment', version: "${parchment_version}-${parchment_minecraft}"
+//    mappings channel: 'official', version: "${minecraft_version}"
+    copyIdeResources = true
+
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'REGISTRIES'
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                "${thisId}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+        }
+        data {
+            workingDirectory project.file('run-data')
+            args '--mod', "${thisId}", '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+        }
+        server {
+            args '--nogui'
+        }
     }
 }
 
-apply plugin: 'dev.necauqua.nmod'
+sourceSets.main.resources.srcDir 'src/generated/resources'
 
-sourceSets { api }
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation project(':mira')
+    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
+}
 
-nmod {
-    curseID = '448650'
-    mcversion = '1.16.*'
-    forge = '1.16.5-36.2.34'
-    mixin = '0.8.5'
-    mappings = '1.16.5'
-
-    githubRepo = null
+jar {
+    finalizedBy('reobfJar')
+    manifest.attributes([
+            "MixinConfigs": "${thisId}.mixins.json"
+    ])
 }
