@@ -6,3 +6,5 @@ build
 
 # a symlink to build/run/.mixin-out in my ws
 mixin-out
+/.profileconfig.json
+/chiseled-me-2/run/

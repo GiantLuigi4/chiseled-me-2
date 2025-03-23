@@ -14,7 +14,7 @@ displayName = 'міра'
 updateJSONURL = 'https://raw.githubusercontent.com/wiki/necauqua/mira/updates.json'
 displayURL = 'https://modrinth.com/mod/mira'
 
-logoFile = 'logo.png' # TODO logo lol
+logoFile = '../logo.png' # TODO logo lol
 
 credits = 'Thanks for cool people from my Discord'
 
