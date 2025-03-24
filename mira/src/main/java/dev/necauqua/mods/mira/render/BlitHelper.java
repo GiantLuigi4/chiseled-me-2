@@ -15,7 +15,7 @@ import org.lwjgl.opengl.GL30;
 import java.nio.FloatBuffer;
 
 public class BlitHelper {
-    private static final GlShader DEPTH_BLIT = ShaderHelper.load(
+    private static GlShader DEPTH_BLIT = ShaderHelper.load(
             "assets/mira/shaders/blit.vsh",
             "assets/mira/shaders/depth_blit.fsh",
             "depth_blit"
@@ -39,7 +39,6 @@ public class BlitHelper {
     ) {
         GlStateManager._colorMask(true, true, true, false);
         GlStateManager._disableDepthTest();
-//        GlStateManager._enableDepthTest();
         GlStateManager._depthMask(false);
         GlStateManager._matrixMode(5889);
         GlStateManager._pushMatrix();
@@ -64,13 +63,11 @@ public class BlitHelper {
                     GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA
             );
             RenderSystem.defaultAlphaFunc();
-//            GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
         }
 
         GlStateManager._color4f(1.0F, 1.0F, 1.0F, 1.0F);
 
         fb.bindRead();
-//        GlStateManager._bindTexture(fb.getDepthTextureId());
 
         float f = (float) w;
         float f1 = (float) h;
@@ -81,16 +78,20 @@ public class BlitHelper {
         DEPTH_BLIT.bind();
 
         int id = MixinHelpers.copyDepth(tgt);
-        
+        tgt.bindWrite(true);
+
         // set texture ids
         GL30.glActiveTexture(GL30.GL_TEXTURE0);
+        int bound0 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, fb.getColorTextureId());
         DEPTH_BLIT.uniformInt("texture", 0);
         GL30.glActiveTexture(GL30.GL_TEXTURE1);
+        int bound1 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
         GL30.glBindTexture(GL30.GL_TEXTURE_2D, fb.getDepthTextureId());
         DEPTH_BLIT.uniformInt("sampNear", 1);
         GL30.glActiveTexture(GL30.GL_TEXTURE2);
-        GL30.glBindTexture(GL30.GL_TEXTURE_2D, tgt.getDepthTextureId());
+        int bound2 = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
+        GL30.glBindTexture(GL30.GL_TEXTURE_2D, id);
         DEPTH_BLIT.uniformInt("sampFar", 2);
 
         // set matrices
@@ -113,5 +114,13 @@ public class BlitHelper {
         GlStateManager._popMatrix();
         GlStateManager._matrixMode(5888);
         GlStateManager._popMatrix();
+
+        GL20.glActiveTexture(GL20.GL_TEXTURE0);
+        GL20.glBindTexture(GL20.GL_TEXTURE_2D, bound0);
+        GL20.glActiveTexture(GL20.GL_TEXTURE1);
+        GL20.glBindTexture(GL20.GL_TEXTURE_2D, bound1);
+        GL20.glActiveTexture(GL20.GL_TEXTURE2);
+        GL20.glBindTexture(GL20.GL_TEXTURE_2D, bound2);
+        GL20.glActiveTexture(GL20.GL_TEXTURE0);
     }
 }

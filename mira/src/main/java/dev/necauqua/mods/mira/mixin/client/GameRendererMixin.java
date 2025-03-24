@@ -60,7 +60,7 @@ public abstract class GameRendererMixin {
 //        return renderingNearPatch ? (float) (0.06f / MixinHelpers.getViewerSize()) : farPlane;
 
         // overcompensate to account for GPU precision
-        return renderingNearPatch ? 0.055f : farPlane;
+        return renderingNearPatch ? 0.0515f : farPlane;
     }
 
     @Inject(method = "renderLevel", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/GameRenderer;renderHand:Z", shift = Shift.BEFORE))

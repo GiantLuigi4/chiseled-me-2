@@ -23,21 +23,26 @@ void main() {
     float depthNear = texture2D(sampNear, fragUV).r;
     float depthFar = texture2D(sampFar, fragUV).r;
 
+    vec4 farForNear = screenToWorld(projNear, 1.0, fragUV);
     vec4 crdNear = screenToWorld(projNear, depthNear, fragUV);
+    vec4 nearForFar = screenToWorld(projFar, 0.0125, fragUV);
     vec4 crdFar = screenToWorld(projFar, depthFar, fragUV);
 
-    crdNear *= projNear;
-    crdFar *= projFar;
+    //    finalColor = vec4(abs(normalize(crdFar.xyz)), 1.0);
+    //    finalColor = vec4(abs(crdFar.zzz), 1.0);
+    //    finalColor = vec4(abs(normalize(crdNear.xyz)), 1.0);
+    //    finalColor = vec4(abs(crdNear.zzz), 1.0);
 
-    finalColor = vec4(normalize(crdFar.xyz), 1.0);
+    if (farForNear.z == crdNear.z) {
+        crdNear.z = 1.0;
+    }
 
-//    if (crdNear.z < crdFar.z) {
-////        finalColor = vec4(1.0);
-//        finalColor = texture2D(texture, fragUV);
-//        return;
-//    }
-//
-//    finalColor = vec4(0.0);
-//    finalColor = vec4(abs(normalize(crdNear.xyz)), 1);
-//    finalColor = vec4(normalize(crdFar.xyz), 1.0);
+    if (min(abs(crdNear.z), abs(crdFar.z)) < abs(nearForFar.z)) {
+        if (abs(crdNear.z) >= abs(crdFar.z) - 0.0001) {
+            discard;
+        }
+        finalColor = texture2D(texture, fragUV);
+    } else {
+        discard;
+    }
 }

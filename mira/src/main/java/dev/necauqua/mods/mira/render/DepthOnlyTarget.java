@@ -7,12 +7,11 @@ import net.minecraft.client.shader.FramebufferConstants;
 import org.lwjgl.opengl.GL30;
 
 public class DepthOnlyTarget {
-    int tex;
+    int tex = -1;
     int id = -1;
     protected int width, height;
 
     public DepthOnlyTarget(int width, int height) {
-        tex = TextureUtil.generateTextureId();
         this.width = width;
         this.height = height;
         resize();
@@ -28,6 +27,10 @@ public class DepthOnlyTarget {
         if (id != -1) {
             GL30.glDeleteFramebuffers(id);
         }
+        if (tex == -1) {
+//            GL30.glDeleteTextures(tex);
+            tex = TextureUtil.generateTextureId();
+        }
 
         id = GL30.glGenFramebuffers();
 
@@ -39,8 +42,14 @@ public class DepthOnlyTarget {
         GlStateManager._texParameter(3553, 34892, 0);
         GlStateManager._glBindFramebuffer(FramebufferConstants.GL_FRAMEBUFFER, this.id);
         GlStateManager._glFramebufferTexture2D(FramebufferConstants.GL_FRAMEBUFFER, FramebufferConstants.GL_DEPTH_ATTACHMENT, 3553, this.tex, 0);
-
         GlStateManager._glBindFramebuffer(FramebufferConstants.GL_FRAMEBUFFER, 0);
+        GlStateManager._texImage2D(3553, 0, org.lwjgl.opengl.GL30.GL_DEPTH32F_STENCIL8, this.width, this.height, 0, org.lwjgl.opengl.GL30.GL_DEPTH_STENCIL, org.lwjgl.opengl.GL30.GL_FLOAT_32_UNSIGNED_INT_24_8_REV, null);
+
+        if (GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE) {
+            System.out.println("Framebuffer creation failed");
+        } else {
+            System.out.println("Framebuffer with only depth attachment created successfully");
+        }
     }
 
     public int getWidth() {

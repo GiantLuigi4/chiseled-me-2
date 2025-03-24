@@ -40,4 +40,8 @@ public class GlShader {
     public void uniformMat4(String name, FloatBuffer value) {
         GL30.glUniformMatrix4fv(getUniformId(name), false, value);
     }
+
+    public void delete() {
+        GL30.glDeleteProgram(id);
+    }
 }

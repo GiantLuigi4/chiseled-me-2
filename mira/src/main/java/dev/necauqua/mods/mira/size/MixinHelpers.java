@@ -24,7 +24,8 @@ public final class MixinHelpers {
 
     public static boolean renderingNearPatch = false;
     public static Framebuffer nearPatchRenderTarget = null;
-    public static DepthOnlyTarget depthCpy = null;
+//    public static DepthOnlyTarget depthCpy = null;
+    public static Framebuffer depthCpy = null;
 
     public static float viewOffsetZLayeringScale = 0.99975586f;
 
@@ -34,10 +35,10 @@ public final class MixinHelpers {
     public static Framebuffer getNearPatchRenderTarget(MainWindow w) {
         if (nearPatchRenderTarget == null) {
             nearPatchRenderTarget = new Framebuffer(w.getWidth(), w.getHeight(), true, Minecraft.ON_OSX);
-            depthCpy = new DepthOnlyTarget(w.getWidth(), w.getHeight());
+            depthCpy = new Framebuffer(w.getWidth(), w.getHeight(), true, Minecraft.ON_OSX);
         } else if (nearPatchRenderTarget.width != w.getWidth() || nearPatchRenderTarget.height != w.getHeight()) {
             nearPatchRenderTarget.resize(w.getWidth(), w.getHeight(), Minecraft.ON_OSX);
-            depthCpy.resize(w.getWidth(), w.getHeight());
+            depthCpy.resize(w.getWidth(), w.getHeight(), Minecraft.ON_OSX);
         }
         return nearPatchRenderTarget;
     }
@@ -89,15 +90,20 @@ public final class MixinHelpers {
 
     public static int copyDepth(Framebuffer tgt) {
 //        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tgt.getColorTextureId());
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tgt.frameBufferId);
-        GL30.glBlitFramebuffer(
-                0, 0,
-                tgt.width, tgt.height,
-                0, 0,
-                tgt.width, tgt.height,
-                GL30.GL_DEPTH_BUFFER_BIT, GL30.GL_NEAREST
-        );
-        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
-        return depthCpy.getId();
+//        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, depthCpy.getId());
+//        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tgt.frameBufferId);
+//        GL30.glBlitFramebuffer(
+//                0, 0,
+//                tgt.width, tgt.height,
+//                0, 0,
+//                tgt.width, tgt.height,
+//                GL30.GL_DEPTH_BUFFER_BIT, GL30.GL_NEAREST
+//        );
+//        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
+//        GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+//        return depthCpy.getId();
+
+        depthCpy.copyDepthFrom(tgt);
+        return depthCpy.getDepthTextureId();
     }
 }
