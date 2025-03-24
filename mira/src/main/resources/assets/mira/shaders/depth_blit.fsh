@@ -20,28 +20,38 @@ vec4 screenToWorld(mat4 proj, in float depth, in vec2 uv){
 }
 
 void main() {
+    // compute depth values for near patch
     float depthNear = texture2D(sampNear, fragUV).r;
-    float depthFar = texture2D(sampFar, fragUV).r;
 
-    vec4 farForNear = screenToWorld(projNear, 1.0, fragUV);
-    vec4 crdNear = screenToWorld(projNear, depthNear, fragUV);
-    vec4 nearForFar = screenToWorld(projFar, 0.0125, fragUV);
-    vec4 crdFar = screenToWorld(projFar, depthFar, fragUV);
+    vec4 farForNear = projFar * screenToWorld(projNear, 1.0, fragUV);
+    vec4 crdNear = projFar * screenToWorld(projNear, depthNear, fragUV);
 
-    //    finalColor = vec4(abs(normalize(crdFar.xyz)), 1.0);
-    //    finalColor = vec4(abs(crdFar.zzz), 1.0);
-    //    finalColor = vec4(abs(normalize(crdNear.xyz)), 1.0);
-    //    finalColor = vec4(abs(crdNear.zzz), 1.0);
+    farForNear /= farForNear.w;
+    crdNear /= crdNear.w;
 
+    // pre-fail anything that wasn't rendered in the near-patch
     if (farForNear.z == crdNear.z) {
-        crdNear.z = 1.0;
+        discard;
     }
 
-    if (min(abs(crdNear.z), abs(crdFar.z)) < abs(nearForFar.z)) {
-        if (abs(crdNear.z) >= abs(crdFar.z) - 0.0001) {
+    // compute depth values for far patch
+    float depthFar = texture2D(sampFar, fragUV).r;
+
+    vec4 nearForFar = projFar * screenToWorld(projFar, 0.0125, fragUV);
+    vec4 crdFar = projFar * screenToWorld(projFar, depthFar, fragUV);
+
+    nearForFar /= nearForFar.w;
+    crdFar /= crdFar.w;
+
+    if (crdNear.z < crdFar.z) {
+        finalColor = texture2D(texture, fragUV);
+
+        vec4 crdFarPrecision = projFar * screenToWorld(projFar, depthFar + 0.01, fragUV);
+        crdFarPrecision /= crdFarPrecision.w;
+
+        if (abs(crdNear.z - crdFar.z) < abs(crdFarPrecision.z - crdFar.z)) {
             discard;
         }
-        finalColor = texture2D(texture, fragUV);
     } else {
         discard;
     }
