@@ -7,6 +7,7 @@ package dev.necauqua.mods.mira.size;
 
 import dev.necauqua.mods.mira.api.IRenderSized;
 import dev.necauqua.mods.mira.api.ISized;
+import dev.necauqua.mods.mira.render.DepthOnlyTarget;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
@@ -16,11 +17,14 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
 
 public final class MixinHelpers {
 
     public static boolean renderingNearPatch = false;
     public static Framebuffer nearPatchRenderTarget = null;
+    public static DepthOnlyTarget depthCpy = null;
 
     public static float viewOffsetZLayeringScale = 0.99975586f;
 
@@ -30,8 +34,10 @@ public final class MixinHelpers {
     public static Framebuffer getNearPatchRenderTarget(MainWindow w) {
         if (nearPatchRenderTarget == null) {
             nearPatchRenderTarget = new Framebuffer(w.getWidth(), w.getHeight(), true, Minecraft.ON_OSX);
+            depthCpy = new DepthOnlyTarget(w.getWidth(), w.getHeight());
         } else if (nearPatchRenderTarget.width != w.getWidth() || nearPatchRenderTarget.height != w.getHeight()) {
             nearPatchRenderTarget.resize(w.getWidth(), w.getHeight(), Minecraft.ON_OSX);
+            depthCpy.resize(w.getWidth(), w.getHeight());
         }
         return nearPatchRenderTarget;
     }
@@ -79,5 +85,19 @@ public final class MixinHelpers {
         ActiveRenderInfo camera = mc.gameRenderer.getMainCamera();
         camera.eyeHeightOld = prevCameraHeight;
         camera.eyeHeight = cameraHeight;
+    }
+
+    public static int copyDepth(Framebuffer tgt) {
+//        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tgt.getColorTextureId());
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, tgt.frameBufferId);
+        GL30.glBlitFramebuffer(
+                0, 0,
+                tgt.width, tgt.height,
+                0, 0,
+                tgt.width, tgt.height,
+                GL30.GL_DEPTH_BUFFER_BIT, GL30.GL_NEAREST
+        );
+        GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, 0);
+        return depthCpy.getId();
     }
 }

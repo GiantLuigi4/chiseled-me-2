@@ -9,16 +9,16 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.necauqua.mods.mira.api.IRenderSized;
+import dev.necauqua.mods.mira.render.BlitHelper;
 import dev.necauqua.mods.mira.size.MixinHelpers;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.shader.Framebuffer;
 import net.minecraft.entity.Entity;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.system.MemoryUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -28,7 +28,7 @@ import org.spongepowered.asm.mixin.injection.At.Shift;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import javax.annotation.Nullable;
+import java.nio.FloatBuffer;
 
 import static dev.necauqua.mods.mira.size.MixinHelpers.*;
 
@@ -46,7 +46,6 @@ public abstract class GameRendererMixin {
 
     @ModifyConstant(method = "getProjectionMatrix", constant = @Constant(floatValue = 0.05f))
     float getProjectionMatrixNearPlane(float nearPlane, ActiveRenderInfo ari, float partialTick) {
-//        return nearPlane;
         if (!renderingNearPatch) {
             return nearPlane;
         }
@@ -59,7 +58,9 @@ public abstract class GameRendererMixin {
     @ModifyArg(method = "getProjectionMatrix", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/math/vector/Matrix4f;perspective(DFFF)Lnet/minecraft/util/math/vector/Matrix4f;"), index = 3)
     float getProjectionMatrixFarPlane(float farPlane) {
 //        return renderingNearPatch ? (float) (0.06f / MixinHelpers.getViewerSize()) : farPlane;
-        return renderingNearPatch ? 0.06f : farPlane;
+
+        // overcompensate to account for GPU precision
+        return renderingNearPatch ? 0.055f : farPlane;
     }
 
     @Inject(method = "renderLevel", at = @At(value = "FIELD", target = "Lnet/minecraft/client/renderer/GameRenderer;renderHand:Z", shift = Shift.BEFORE))
@@ -67,6 +68,15 @@ public abstract class GameRendererMixin {
         if (renderingNearPatch) {
             return;
         }
+
+        FloatBuffer projFar = MemoryUtil.memAllocFloat(4 * 4);
+        FloatBuffer projNear = MemoryUtil.memAllocFloat(4 * 4);
+
+        GL30.glGetFloatv(GL30.GL_PROJECTION_MATRIX, projFar);
+
+        Framebuffer vTarget = Minecraft.getInstance().getMainRenderTarget();
+        MainWindow w = minecraft.getWindow();
+
         renderingNearPatch = true;
         renderHand = false;
         minecraft.getProfiler().push("miraNearPass");
@@ -93,9 +103,12 @@ public abstract class GameRendererMixin {
         //  and then slap it over the main one with the blending configured accordingly
 
         // main render target here must be our near patch one
-        minecraft.getMainRenderTarget().clear(Minecraft.ON_OSX);
+        minecraft.getMainRenderTarget().bindWrite(true);
+        BlitHelper._quickBlit(vTarget, w.getWidth(), w.getHeight(), true);
+        GlStateManager._clear(GL30.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 
         renderLevel(partialTick, lastTimeNanos, scaled);
+        GL30.glGetFloatv(GL30.GL_PROJECTION_MATRIX, projNear);
 
         viewOffsetZLayeringScale = 0.99975586f;
 
@@ -103,51 +116,17 @@ public abstract class GameRendererMixin {
         renderHand = true;
         renderingNearPatch = false;
 
-        minecraft.getMainRenderTarget().bindWrite(false);
-        MainWindow w = minecraft.getWindow();
-        getNearPatchRenderTarget(w).blitToScreen(w.getWidth(), w.getHeight());
-    }
+        minecraft.getMainRenderTarget().bindWrite(true);
+//        getNearPatchRenderTarget(w).blitToScreen(w.getWidth(), w.getHeight(), false);
+        BlitHelper._blitToScreen(
+                getNearPatchRenderTarget(w), vTarget,
+                w.getWidth(), w.getHeight(),
+                false, projNear, projFar
+        );
 
-//    private static void _blitToScreen(Framebuffer fb, int w, int h, boolean flag) {
-//        GlStateManager._colorMask(true, true, true, false);
-//        GlStateManager._disableDepthTest();
-//        GlStateManager._depthMask(false);
-//        GlStateManager._matrixMode(5889);
-//        GlStateManager._loadIdentity();
-//        GlStateManager._ortho(0.0D, w, h, 0.0D, 1000.0D, 3000.0D);
-//        GlStateManager._matrixMode(5888);
-//        GlStateManager._loadIdentity();
-//        GlStateManager._translatef(0.0F, 0.0F, -2000.0F);
-//        GlStateManager._viewport(0, 0, w, h);
-//        GlStateManager._enableTexture();
-//        GlStateManager._disableLighting();
-//        GlStateManager._disableAlphaTest();
-//        if (flag) {
-//            GlStateManager._disableBlend();
-//            GlStateManager._enableColorMaterial();
-//        }
-//
-//        GlStateManager._color4f(1.0F, 1.0F, 1.0F, 1.0F);
-//
-//        fb.bindRead();
-////        GlStateManager._bindTexture(fb.getDepthTextureId());
-//
-//        float f = (float)w;
-//        float f1 = (float)h;
-//        float f2 = (float)fb.viewWidth / (float)fb.width;
-//        float f3 = (float)fb.viewHeight / (float)fb.height;
-//        Tessellator tessellator = RenderSystem.renderThreadTesselator();
-//        BufferBuilder bufferbuilder = tessellator.getBuilder();
-//        bufferbuilder.begin(7, DefaultVertexFormats.POSITION_TEX_COLOR);
-//        bufferbuilder.vertex(0.0D, f1, 0.0D).uv(0.0F, 0.0F).color(255, 255, 255, 255).endVertex();
-//        bufferbuilder.vertex(f, f1, 0.0D).uv(f2, 0.0F).color(255, 255, 255, 255).endVertex();
-//        bufferbuilder.vertex(f, 0.0D, 0.0D).uv(f2, f3).color(255, 255, 255, 255).endVertex();
-//        bufferbuilder.vertex(0.0D, 0.0D, 0.0D).uv(0.0F, f3).color(255, 255, 255, 255).endVertex();
-//        tessellator.end();
-//        fb.unbindRead();
-//        GlStateManager._depthMask(true);
-//        GlStateManager._colorMask(true, true, true, true);
-//    }
+        MemoryUtil.memFree(projFar);
+        MemoryUtil.memFree(projNear);
+    }
 
     @Shadow
     public abstract void renderLevel(float p_228378_1_, long p_228378_2_, MatrixStack p_228378_4_);
@@ -162,9 +141,9 @@ public abstract class GameRendererMixin {
     }
 
     @ModifyConstant(method = "pick", constant = {
-        @Constant(doubleValue = 1.0),
-        @Constant(doubleValue = 3.0),
-        @Constant(doubleValue = 6.0),
+            @Constant(doubleValue = 1.0),
+            @Constant(doubleValue = 3.0),
+            @Constant(doubleValue = 6.0),
     })
     double pick(double constant) {
         return constant * MixinHelpers.getViewerSize();
