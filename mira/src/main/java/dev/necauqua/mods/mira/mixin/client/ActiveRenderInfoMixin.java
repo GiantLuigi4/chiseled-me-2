@@ -6,6 +6,7 @@
 package dev.necauqua.mods.mira.mixin.client;
 
 import dev.necauqua.mods.mira.api.IRenderSized;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import net.minecraft.client.renderer.ActiveRenderInfo;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.IBlockReader;
@@ -22,7 +23,7 @@ public abstract class ActiveRenderInfoMixin {
     @ModifyConstant(method = "setup", constant = @Constant(doubleValue = 4.0))
     double setupMaxDetachedDistance(double constant, IBlockReader blockReader, Entity viewEntity, boolean detached,
                                     boolean mirror, float partialTicks) {
-        double size = ((IRenderSized) viewEntity).getSizeCM(partialTicks);
+        double size = ((IRenderSized) viewEntity).getSizeCM(MiraAttributes.THIRD_PERSON.get(), partialTicks);
         $cm$size = (float) size;
         return constant * size;
     }

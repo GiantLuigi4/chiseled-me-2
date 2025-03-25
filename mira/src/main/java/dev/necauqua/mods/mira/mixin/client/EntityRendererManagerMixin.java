@@ -29,7 +29,8 @@ public abstract class EntityRendererManagerMixin {
     @ModifyVariable(method = "renderShadow", at = @At("HEAD"), ordinal = 2, argsOnly = true)
     private static float renderShadowScaleRadius(float radius, MatrixStack matrixStack, IRenderTypeBuffer buffer,
                                                  Entity entity, float strength, float partialTicks) {
-        $cm$sizeStatic = ((IRenderSized) entity).getSizeCM(partialTicks);
+        // TODO: base on hitbox or visual...?
+        $cm$sizeStatic = ((IRenderSized) entity).getSizeCM(MiraAttributes.WIDTH.getSecond().get(), partialTicks);
         return (float) (radius * Math.min($cm$sizeStatic, Config.maxShadowSize.get()));
     }
 

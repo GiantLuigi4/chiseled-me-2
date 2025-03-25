@@ -6,6 +6,7 @@
 package dev.necauqua.mods.mira.mixin.client;
 
 import dev.necauqua.mods.mira.api.IRenderSized;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.OverlayRenderer;
 import net.minecraft.entity.player.PlayerEntity;
@@ -18,6 +19,10 @@ public abstract class OverlayRendererMixin {
 
     @ModifyConstant(method = "getOverlayBlock", remap = false, constant = @Constant(floatValue = 0.1f))
     private static float getOverlayBlockVerticalOffset(float offset, PlayerEntity player) {
-        return (float) (offset * ((IRenderSized) player).getSizeCM(Minecraft.getInstance().getDeltaFrameTime()));
+        return (float) (offset * ((IRenderSized) player).getSizeCM(
+                // TODO: HEIGHT or EYE_HEIGHT?
+                MiraAttributes.EYE_HEIGHT.get(),
+                Minecraft.getInstance().getDeltaFrameTime())
+        );
     }
 }

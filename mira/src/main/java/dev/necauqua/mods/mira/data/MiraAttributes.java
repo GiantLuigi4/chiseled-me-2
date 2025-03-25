@@ -30,13 +30,21 @@ public class MiraAttributes {
             "mira.scale.uniform",
             () -> new MiraAttribute("mira.scale.uniform", 1.0)
     );
-    public static final RegistryObject<MiraAttribute> EAT = register(
-            "mira.scale.eat",
-            () -> new MiraAttribute("mira.scale.eat", 1.0)
-    );
     public static final RegistryObject<MiraAttribute> ITEM = register(
             "mira.scale.item",
             () -> new MiraAttribute("mira.scale.item", 1.0)
+    );
+
+    // stats
+    public static final RegistryObject<MiraAttribute> EAT = register(
+            "mira.stats.eat",
+            () -> new InfluencedAttribute("mira.stats.eat", 1.0)
+                    .addEvaluation((value, entity) -> value * UNIFORM.get().getValue(entity))
+    );
+    public static final RegistryObject<MiraAttribute> MOVEMENT = register(
+            "mira.stats.movement",
+            () -> new InfluencedAttribute("mira.stats.movement", 1.0)
+                    .addEvaluation((value, entity) -> value * UNIFORM.get().getValue(entity))
     );
 
 
@@ -64,7 +72,6 @@ public class MiraAttributes {
             (name, base) -> new InfluencedAttribute(name, 1.0)
                     .addEvaluation((value, entity) -> value * base.get().getValue(entity))
     );
-
     public static final Pair<RegistryObject<InfluencedAttribute>, RegistryObject<InfluencedAttribute>> HEIGHT = registerScalePair(
             "mira.hitbox", HITBOX,
             "mira.visual", VISUAL,
@@ -72,6 +79,32 @@ public class MiraAttributes {
             (name, base) -> new InfluencedAttribute(name, 1.0)
                     .addEvaluation((value, entity) -> value * base.get().getValue(entity))
     );
+
+    public static final RegistryObject<MiraAttribute> EYE_HEIGHT = register(
+            "mira.visual.eye_height",
+            () -> new InfluencedAttribute("mira.visual.eye_height", 1.0)
+                    .addEvaluation((value, entity) -> value * HEIGHT.getSecond().get().getValue(entity))
+    );
+
+    // TODO: not exactly sure how this should be influenced?
+    //       I think max of HEIGHT, WIDTH
+    public static final RegistryObject<MiraAttribute> THIRD_PERSON = register(
+            "mira.visual.third_person",
+            () -> new InfluencedAttribute("mira.visual.third_person", 1.0)
+                    .addEvaluation((value, entity) -> value * HEIGHT.getFirst().get().getValue(entity))
+    );
+    public static final RegistryObject<MiraAttribute> NEAR_PLANE = register(
+            "mira.visual.near_plane",
+            () -> new InfluencedAttribute("mira.visual.near_plane", 1.0)
+                    .addEvaluation((value, entity) -> value * WIDTH.getFirst().get().getValue(entity))
+    );
+    // TODO: or should this be based on size?
+    public static final RegistryObject<MiraAttribute> VIEW_BOB = register(
+            "mira.visual.view_bob",
+            () -> new InfluencedAttribute("mira.visual.view_bob", 1.0)
+                    .addEvaluation((value, entity) -> value * MOVEMENT.get().getValue(entity))
+    );
+
     public static final RegistryObject<MiraAttribute> RENDER_DISTANCE = register(
             "mira.visual.render_distance",
             () -> new InfluencedAttribute("mira.visual.render_distance", 1.0)

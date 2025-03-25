@@ -98,7 +98,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
         MixinHelpers.onSetSize((Entity) (Object) this, $cm$size, size);
 
         if (animationTicks == 0) {
-            setRawSizeCM(size);
+            setRawSizeCM();
         } else {
             $cm$process = new ResizingProcess($cm$size, size, animationTicks);
             Network.sync((Entity) (Object) this, size, animationTicks);
@@ -112,6 +112,11 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
         }
     }
 
+    @Override
+    public void updateSize() {
+        setRawSizeCM();
+    }
+
     // region collision
 
     @Override
@@ -122,15 +127,18 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @SuppressWarnings("ConstantConditions") // same
     @Override
-    public void setRawSizeCM(double size) {
-        // this.dimensions but unscaled
-        EntitySize oldDimensions = new EntitySize((float) (dimensions.width / $cm$size),
-            (float) (dimensions.height / $cm$size), dimensions.fixed);
+    public void setRawSizeCM() {
+        double width = getSizeCM(MiraAttributes.WIDTH.getFirst().get());
+        double height = getSizeCM(MiraAttributes.HEIGHT.getFirst().get());
 
-        $cm$size = size;
-        if ($cm$process == null) { // only force-set it when animation is done
-            entityData.set($CM$SIZE, size);
-        }
+        // this.dimensions but unscaled
+        EntitySize oldDimensions = new EntitySize((float) (dimensions.width / width),
+            (float) (dimensions.height / height), dimensions.fixed);
+
+//        $cm$size = size;
+//        if ($cm$process == null) { // only force-set it when animation is done
+//            entityData.set($CM$SIZE, size);
+//        }
 
         // inlined `refreshDimensions` methods with adjustments to avoid weird position
         // changes
@@ -145,13 +153,13 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
         float prevEyeHeight = eyeHeight;
         // set this.eyeHeight and this.size to be scaled (by us) again
-        eyeHeight = (float) (sizeEvent.getNewEyeHeight() * size);
+        eyeHeight = (float) (sizeEvent.getNewEyeHeight() * height);
         if (level.isClientSide) {
             MixinHelpers.setCameraHeight((Entity) (Object) this, prevEyeHeight, eyeHeight);
         }
 
-        float w = (float) (newDimensions.width * size);
-        float h = (float) (newDimensions.height * size);
+        float w = (float) (newDimensions.width * width);
+        float h = (float) (newDimensions.height * height);
         dimensions = new EntitySize(w, h, dimensions.fixed);
 
         // custom aabb update which does not have weird logic causing weird offsets
@@ -171,10 +179,12 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
         }
         if (p.currentTime++ < p.interval) {
             p.prevTickSize = $cm$size;
-            setRawSizeCM(p.startSize + (p.targetSize - p.startSize) / p.interval * p.currentTime);
+            // TODO: setRawSizeCM(p.startSize + (p.targetSize - p.startSize) / p.interval * p.currentTime);
+            // need some way of handling resize processes
+            setRawSizeCM();
         } else {
             $cm$process = null;
-            setRawSizeCM(p.targetSize);
+            setRawSizeCM();
         }
     }
 
@@ -238,7 +248,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @Redirect(method = "refreshDimensions", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;eyeHeight:F", opcode = Opcodes.PUTFIELD))
     void refreshDimensionsScaleEyeHeight(Entity self, float eyeHeight) {
-        this.eyeHeight = (float) (eyeHeight * getSizeCM(MiraAttributes.HEIGHT.getFirst().get()));
+        this.eyeHeight = (float) (eyeHeight * getSizeCM(MiraAttributes.EYE_HEIGHT.get()));
     }
 
     @ModifyConstant(method = "isInWall", constant = @Constant(doubleValue = 0.10000000149011612D))
@@ -249,7 +259,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @ModifyConstant(method = "checkInsideBlocks", constant = @Constant(doubleValue = 0.001))
     double checkInsideBlocks(double constant) {
-        // TODO: check
+        // TODO: split xyz
         return constant * getSizeCM(MiraAttributes.HEIGHT.getFirst().get());
     }
 
@@ -266,7 +276,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     @ModifyConstant(method = "collide", constant = @Constant(doubleValue = 1.0E-7))
     double collideScaleBBoxDeflation(double constant) {
         // TODO: is this an appropriate scale to base this off of?
-        return constant * ((ISized) this).getSizeCM(MiraAttributes.WIDTH.getFirst().get());
+        return constant * ((ISized) this).getSizeCM(MiraAttributes.MOVEMENT.get());
     }
 
     @ModifyConstant(method = "getBlockPosBelowThatAffectsMyMovement", constant = @Constant(doubleValue = 0.5000001))
@@ -281,7 +291,9 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @ModifyVariable(method = "move", at = @At("HEAD"), ordinal = 0, argsOnly = true)
     Vector3d move(Vector3d offset, MoverType type) {
-        return type == MoverType.SELF || type == MoverType.PLAYER ? offset.multiply($cm$size, $cm$size, $cm$size)
+        double moveSpeed = getSizeCM(MiraAttributes.MOVEMENT.get());
+
+        return type == MoverType.SELF || type == MoverType.PLAYER ? offset.multiply(moveSpeed, moveSpeed, moveSpeed)
             : offset;
     }
 
@@ -293,7 +305,8 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
         @Constant(doubleValue = 0.001), // flammable collision
     })
     double moveConstantsMul(double constant) {
-        return constant * $cm$size;
+        double moveSpeed = getSizeCM(MiraAttributes.MOVEMENT.get());
+        return constant * moveSpeed;
     }
 
     // endregion
@@ -302,12 +315,14 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @ModifyConstant(method = "move", constant = @Constant(doubleValue = 0.6))
     double moveWalkDist(double constant) {
-        return constant / $cm$size;
+        double moveSpeed = getSizeCM(MiraAttributes.MOVEMENT.get());
+        return constant / moveSpeed;
     }
 
     @ModifyConstant(method = "move", constant = @Constant(floatValue = 0.35f))
     float moveSwimSound(float constant) {
-        return (float) (constant / $cm$size);
+        double moveSpeed = getSizeCM(MiraAttributes.MOVEMENT.get());
+        return (float) (constant / moveSpeed);
     }
 
     // endregion
@@ -331,6 +346,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @ModifyVariable(method = "updateFluidHeightAndDoFluidPushing", at = @At("HEAD"), ordinal = 0, argsOnly = true)
     double updateFluidHeightAndDoFluidPushingMotionScale(double motionScale) {
+        // TODO: fluid push specific scalar?
         return motionScale * $cm$size;
     }
 

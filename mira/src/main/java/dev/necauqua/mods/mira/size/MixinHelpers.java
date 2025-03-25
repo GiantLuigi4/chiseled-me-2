@@ -7,7 +7,8 @@ package dev.necauqua.mods.mira.size;
 
 import dev.necauqua.mods.mira.api.IRenderSized;
 import dev.necauqua.mods.mira.api.ISized;
-import dev.necauqua.mods.mira.render.DepthOnlyTarget;
+import dev.necauqua.mods.mira.data.MiraAttribute;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ActiveRenderInfo;
@@ -17,8 +18,6 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL30;
 
 public final class MixinHelpers {
 
@@ -72,9 +71,9 @@ public final class MixinHelpers {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static double getViewerSize(float partialTicks) {
+    public static double getViewerSize(MiraAttribute attribute, float partialTicks) {
         Entity viewer = Minecraft.getInstance().getCameraEntity();
-        return viewer != null ? ((IRenderSized) viewer).getSizeCM(partialTicks) : 1.0;
+        return viewer != null ? ((IRenderSized) viewer).getSizeCM(attribute, partialTicks) : 1.0;
     }
 
     @OnlyIn(Dist.CLIENT)

@@ -6,6 +6,7 @@
 package dev.necauqua.mods.mira.mixin.entity.player;
 
 import dev.necauqua.mods.mira.api.ISized;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import dev.necauqua.mods.mira.size.ScaledParticleData;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -61,7 +62,7 @@ public abstract class PlayerEntityMixin {
 
     @ModifyArg(method = "sweepAttack", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ServerWorld;sendParticles(Lnet/minecraft/particles/IParticleData;DDDIDDDD)I"))
     IParticleData sweepAttack(IParticleData particleData) {
-        return ScaledParticleData.wrap(particleData, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(particleData, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyVariable(method = "sweepAttack", ordinal = 0, at = @At("STORE"))

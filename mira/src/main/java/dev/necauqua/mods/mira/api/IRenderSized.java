@@ -123,5 +123,7 @@ public interface IRenderSized extends ISized {
      *
      * @param size the size to be set immediately.
      */
-    void setRawSizeCM(double size);
+    void setRawSizeCM();
+
+    void updateSize();
 }

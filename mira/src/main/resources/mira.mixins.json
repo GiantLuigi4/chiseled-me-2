@@ -27,7 +27,9 @@
     "entity.projectile.ThrowableEntityMixin",
     "item.BoatItemMixin",
     "item.EnderEyeItemMixin",
-    "item.SpawnEggItemMixin"
+    "item.SpawnEggItemMixin",
+    "tracker.LivingEntityMixin",
+    "tracker.ModifiableAttributeMixin"
   ],
   "client": [
     "client.ActiveRenderInfoMixin", "client.CapeLayerMixin", "client.ClientPlayNetHandlerMixin",

@@ -9,6 +9,7 @@ import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import dev.necauqua.mods.mira.api.IRenderSized;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import dev.necauqua.mods.mira.render.BlitHelper;
 import dev.necauqua.mods.mira.size.MixinHelpers;
 import net.minecraft.client.MainWindow;
@@ -51,7 +52,7 @@ public abstract class GameRendererMixin {
         }
         Entity view = minecraft.getCameraEntity();
         assert view != null;
-        double size = ((IRenderSized) view).getSizeCM(partialTick);
+        double size = ((IRenderSized) view).getSizeCM(MiraAttributes.NEAR_PLANE.get(), partialTick);
         return size < 1.0f ? nearPlane * (float) size : nearPlane;
     }
 
@@ -81,7 +82,7 @@ public abstract class GameRendererMixin {
         renderHand = false;
         minecraft.getProfiler().push("miraNearPass");
 
-        float invSize = (float) (1.0 / MixinHelpers.getViewerSize(partialTick));
+        float invSize = (float) (1.0 / MixinHelpers.getViewerSize(MiraAttributes.NEAR_PLANE.get(), partialTick));
         MatrixStack scaled = new MatrixStack();
 //        scaled.scale(invSize, invSize, invSize);
 
@@ -163,7 +164,7 @@ public abstract class GameRendererMixin {
 
     @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;bobView(Lcom/mojang/blaze3d/matrix/MatrixStack;F)V", shift = Shift.BEFORE))
     void renderLevelBeforeBob(float partialTick, long finishTimeNano, MatrixStack matrixStack, CallbackInfo ci) {
-        $cm$bobbingHack = (float) MixinHelpers.getViewerSize(partialTick);
+        $cm$bobbingHack = (float) MixinHelpers.getViewerSize(MiraAttributes.VIEW_BOB.get(), partialTick);
     }
 
     @Inject(method = "renderLevel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/GameRenderer;bobView(Lcom/mojang/blaze3d/matrix/MatrixStack;F)V", shift = Shift.AFTER))

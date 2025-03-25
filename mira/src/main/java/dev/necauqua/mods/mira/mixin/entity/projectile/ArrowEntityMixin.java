@@ -6,6 +6,8 @@
 package dev.necauqua.mods.mira.mixin.entity.projectile;
 
 import dev.necauqua.mods.mira.api.ISized;
+import dev.necauqua.mods.mira.data.MiraAttribute;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import dev.necauqua.mods.mira.size.ScaledParticleData;
 import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.particles.IParticleData;
@@ -18,6 +20,6 @@ public abstract class ArrowEntityMixin {
 
     @ModifyArg(method = "makeParticle", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData onHit(IParticleData particle) {
-        return ScaledParticleData.wrap(particle, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(particle, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 }
