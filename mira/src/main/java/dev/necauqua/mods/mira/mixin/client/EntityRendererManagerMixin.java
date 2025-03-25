@@ -76,13 +76,13 @@ public abstract class EntityRendererManagerMixin {
 
     @ModifyConstant(method = "renderHitbox", constant = @Constant(floatValue = 0.01f))
     float renderHitboxEyeBoxFix(float constant) {
-        // TODO: split xyz
+        // TODO: choose a better scale type..?
         return (float) (constant * $cm$size$width);
     }
 
     @ModifyConstant(method = "renderHitbox", constant = @Constant(doubleValue = 2.0))
     double renderHitboxEyeVecFix(double constant) {
-        // TODO: split xyz..?
+        // TODO: choose a better scale type..?
         return constant * $cm$size$height;
     }
 

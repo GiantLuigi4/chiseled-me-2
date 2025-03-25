@@ -6,6 +6,7 @@
 package dev.necauqua.mods.mira.mixin.client;
 
 import dev.necauqua.mods.mira.api.ISized;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import dev.necauqua.mods.mira.size.ScaledParticleData;
 import net.minecraft.client.particle.*;
 import net.minecraft.entity.Entity;
@@ -158,7 +159,7 @@ public abstract class ParticleMixin implements ISized {
 
         @ModifyArg(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/world/ClientWorld;addParticle(Lnet/minecraft/particles/IParticleData;ZDDDDDD)V"))
         IParticleData spawnParticleArgs(IParticleData particleData) {
-            return ScaledParticleData.wrap(particleData, ((ISized) entity).getSizeCM());
+            return ScaledParticleData.wrap(particleData, ((ISized) entity).getSizeCM(MiraAttributes.PARTICLE.get()));
         }
     }
 
@@ -171,7 +172,8 @@ public abstract class ParticleMixin implements ISized {
 
         @ModifyConstant(method = "render", constant = @Constant(doubleValue = 0.5))
         double render(double constant) {
-            return constant * ((ISized) target).getSizeCM();
+            // TODO: this is a funky one... need to look into what works best
+            return constant * ((ISized) target).getSizeCM(MiraAttributes.PARTICLE.get());
         }
     }
 }

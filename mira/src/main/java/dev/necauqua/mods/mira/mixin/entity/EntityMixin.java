@@ -9,8 +9,8 @@ import dev.necauqua.mods.mira.Config;
 import dev.necauqua.mods.mira.Network;
 import dev.necauqua.mods.mira.api.*;
 import dev.necauqua.mods.mira.data.DataSerializerDouble;
+import dev.necauqua.mods.mira.data.MiraAttribute;
 import dev.necauqua.mods.mira.data.MiraAttributes;
-import dev.necauqua.mods.mira.data.SimpleAttribute;
 import dev.necauqua.mods.mira.extras.IEntityExtras;
 import dev.necauqua.mods.mira.size.MixinHelpers;
 import dev.necauqua.mods.mira.size.ResizingProcess;
@@ -76,7 +76,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     }
 
     @Override
-    public double getSizeCM(SimpleAttribute attribute, float partialTick) {
+    public double getSizeCM(MiraAttribute attribute, float partialTick) {
         // TODO: implement
         return getSizeCM(attribute);
     }
@@ -392,7 +392,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @ModifyArg(method = "doWaterSplashEffect", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData doWaterSplashEffect(IParticleData args) {
-        return ScaledParticleData.wrap(args, $cm$size);
+        return ScaledParticleData.wrap(args, getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @Inject(method = "canSpawnSprintParticle", at = @At("HEAD"), cancellable = true)
@@ -407,12 +407,12 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
         @Constant(doubleValue = 0.20000000298023224),
     })
     double spawnSprintParticle(double constant) {
-        return constant * $cm$size;
+        return constant * getSizeCM(MiraAttributes.PARTICLE.get());
     }
 
     @ModifyArg(method = "spawnSprintParticle", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData spawnSprintParticle(IParticleData args) {
-        return ScaledParticleData.wrap(args, $cm$size);
+        return ScaledParticleData.wrap(args, getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     // more vanilla fixes for the surprising cases like entities being tiny lol
@@ -430,7 +430,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     }
 
     @Override
-    public double getSizeCM(SimpleAttribute attribute) {
+    public double getSizeCM(MiraAttribute attribute) {
         if (((Object) this) instanceof LivingEntity) {
             return attribute.getValue((LivingEntity) (Object) this);
         }

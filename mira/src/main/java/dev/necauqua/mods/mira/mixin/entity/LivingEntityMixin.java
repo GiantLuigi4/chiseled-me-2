@@ -7,6 +7,7 @@ package dev.necauqua.mods.mira.mixin.entity;
 
 import dev.necauqua.mods.mira.Config;
 import dev.necauqua.mods.mira.api.ISized;
+import dev.necauqua.mods.mira.data.MiraAttributes;
 import dev.necauqua.mods.mira.size.ScaledParticleData;
 import dev.necauqua.mods.mira.size.SizedReachAttribute;
 import net.minecraft.entity.Entity;
@@ -119,47 +120,49 @@ public abstract class LivingEntityMixin {
 
     @ModifyArg(method = "baseTick", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData createRunningParticles(IParticleData data) {
-        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyArg(method = "tickDeath", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData tickDeath(IParticleData data) {
-        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyConstant(method = "spawnSoulSpeedParticle", constant = @Constant(doubleValue = 0.1))
     double blockUsingShield(double constant) {
+        // TODO: I'm getting mixed messages here...
+        //       lil confused on how to interpret this
         return constant * ((ISized) this).getSizeCM();
     }
 
     @ModifyArg(method = "spawnSoulSpeedParticle", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData spawnSoulSpeedParticle(IParticleData data) {
-        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyArg(method = "tickEffects", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData tickEffects(IParticleData data) {
-        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyArg(method = "checkFallDamage", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ServerWorld;sendParticles(Lnet/minecraft/particles/IParticleData;DDDIDDDD)I"))
     IParticleData checkFallDamage(IParticleData data) {
-        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyVariable(method = "spawnItemParticles", ordinal = 1, at = @At(value = "STORE", ordinal = 0))
     Vector3d spawnItemParticles(Vector3d vector3d1) {
-        return vector3d1.scale(((ISized) this).getSizeCM());
+        return vector3d1.scale(((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyArg(method = "spawnItemParticles", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/server/ServerWorld;sendParticles(Lnet/minecraft/particles/IParticleData;DDDIDDDD)I"))
     IParticleData spawnItemParticles(IParticleData data) {
-        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     @ModifyArg(method = "spawnItemParticles", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/World;addParticle(Lnet/minecraft/particles/IParticleData;DDDDDD)V"))
     IParticleData spawnItemParticlesClient(IParticleData data) {
-        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM());
+        return ScaledParticleData.wrap(data, ((ISized) this).getSizeCM(MiraAttributes.PARTICLE.get()));
     }
 
     // endregion

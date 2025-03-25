@@ -5,7 +5,7 @@
 
 package dev.necauqua.mods.mira.api;
 
-import dev.necauqua.mods.mira.data.SimpleAttribute;
+import dev.necauqua.mods.mira.data.MiraAttribute;
 import net.minecraft.entity.Entity;
 
 import javax.annotation.Nullable;
@@ -53,7 +53,7 @@ public interface IRenderSized extends ISized {
     @Deprecated
     double getSizeCM(float partialTick);
 
-    default double getSizeCM(SimpleAttribute attribute, float partialTick) {
+    default double getSizeCM(MiraAttribute attribute, float partialTick) {
         return getSizeCM(partialTick);
     }
 

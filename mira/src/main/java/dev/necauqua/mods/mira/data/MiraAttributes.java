@@ -2,16 +2,14 @@ package dev.necauqua.mods.mira.data;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.entity.ai.attributes.Attribute;
-import net.minecraft.entity.ai.attributes.Attributes;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.IForgeRegistryEntry;
-import org.w3c.dom.Attr;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 
@@ -28,45 +26,68 @@ public class MiraAttributes {
 
     private static final DeferredRegister<Attribute> ATTRIBUTES = DeferredRegister.create(Attribute.class, "mira");
 
-    public static final RegistryObject<SimpleAttribute> UNIFORM = register(
+    public static final RegistryObject<MiraAttribute> UNIFORM = register(
             "mira.scale.uniform",
-            () -> new SimpleAttribute("mira.scale.uniform", 1.0)
+            () -> new MiraAttribute("mira.scale.uniform", 1.0)
     );
-    public static final RegistryObject<SimpleAttribute> EAT = register(
+    public static final RegistryObject<MiraAttribute> EAT = register(
             "mira.scale.eat",
-            () -> new SimpleAttribute("mira.scale.eat", 1.0)
+            () -> new MiraAttribute("mira.scale.eat", 1.0)
     );
-    public static final RegistryObject<SimpleAttribute> ITEM = register(
+    public static final RegistryObject<MiraAttribute> ITEM = register(
             "mira.scale.item",
-            () -> new SimpleAttribute("mira.scale.item", 1.0)
+            () -> new MiraAttribute("mira.scale.item", 1.0)
+    );
+
+
+    public static final RegistryObject<MiraAttribute> HITBOX = register(
+            "mira.hitbox",
+            () -> new InfluencedAttribute("mira.hitbox", 1.0)
+                    .addEvaluation((value, entity) -> value * UNIFORM.get().getValue(entity))
+    );
+
+    public static final RegistryObject<MiraAttribute> VISUAL = register(
+            "mira.visual",
+            () -> new InfluencedAttribute("mira.visual", 1.0)
+                    .addEvaluation((value, entity) -> value * UNIFORM.get().getValue(entity))
+    );
+    public static final RegistryObject<MiraAttribute> PARTICLE = register(
+            "mira.visual.particle",
+            () -> new InfluencedAttribute("mira.visual.particle", 1.0)
+                    .addEvaluation((value, entity) -> value * UNIFORM.get().getValue(entity))
     );
 
     public static final Pair<RegistryObject<InfluencedAttribute>, RegistryObject<InfluencedAttribute>> WIDTH = registerScalePair(
-            "mira.hitbox",
-            "mira.visual",
+            "mira.hitbox", HITBOX,
+            "mira.visual", VISUAL,
             "width",
-            (name) -> new InfluencedAttribute(name, 1.0)
-                    .addEvaluation((value, entity) -> value * UNIFORM.get().getValue(entity))
+            (name, base) -> new InfluencedAttribute(name, 1.0)
+                    .addEvaluation((value, entity) -> value * base.get().getValue(entity))
     );
 
     public static final Pair<RegistryObject<InfluencedAttribute>, RegistryObject<InfluencedAttribute>> HEIGHT = registerScalePair(
-            "mira.hitbox",
-            "mira.visual",
+            "mira.hitbox", HITBOX,
+            "mira.visual", VISUAL,
             "height",
-            (name) -> new InfluencedAttribute(name, 1.0)
-                    .addEvaluation((value, entity) -> value * UNIFORM.get().getValue(entity))
+            (name, base) -> new InfluencedAttribute(name, 1.0)
+                    .addEvaluation((value, entity) -> value * base.get().getValue(entity))
+    );
+    public static final RegistryObject<MiraAttribute> RENDER_DISTANCE = register(
+            "mira.visual.render_distance",
+            () -> new InfluencedAttribute("mira.visual.render_distance", 1.0)
+                    .addEvaluation((value, entity) -> value * VISUAL.get().getValue(entity))
     );
 
     private static <T extends IForgeRegistryEntry<? super T>> Pair<RegistryObject<T>, RegistryObject<T>> registerScalePair(
-            String baseNameFirst,
-            String baseNameSecond,
+            String baseNameFirst, RegistryObject<MiraAttribute> firstBase,
+            String baseNameSecond, RegistryObject<MiraAttribute> secondBase,
             String specificName,
-            Function<String, T> gen
+            BiFunction<String, RegistryObject<MiraAttribute>, T> gen
     ) {
         //noinspection unchecked
         return Pair.of(
-                (RegistryObject<T>) register(baseNameFirst + "." + specificName, () -> (Attribute) gen.apply(baseNameFirst + "." + specificName)),
-                (RegistryObject<T>) register(baseNameSecond + "." + specificName, () -> (Attribute) gen.apply(baseNameSecond + "." + specificName))
+                (RegistryObject<T>) register(baseNameFirst + "." + specificName, () -> (Attribute) gen.apply(baseNameFirst + "." + specificName, firstBase)),
+                (RegistryObject<T>) register(baseNameSecond + "." + specificName, () -> (Attribute) gen.apply(baseNameSecond + "." + specificName, secondBase))
         );
     }
 

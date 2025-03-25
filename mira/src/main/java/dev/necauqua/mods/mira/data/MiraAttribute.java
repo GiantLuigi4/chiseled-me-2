@@ -1,13 +1,11 @@
 package dev.necauqua.mods.mira.data;
 
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.attributes.Attribute;
-import net.minecraft.entity.ai.attributes.AttributeModifier;
 import net.minecraft.entity.ai.attributes.ModifiableAttributeInstance;
 
-public class SimpleAttribute extends Attribute {
-    public SimpleAttribute(String pDescriptionId, double pDefaultValue) {
+public class MiraAttribute extends Attribute {
+    public MiraAttribute(String pDescriptionId, double pDefaultValue) {
         super(pDescriptionId, pDefaultValue);
     }
 
