@@ -5,6 +5,8 @@
 
 package dev.necauqua.mods.mira.api;
 
+import dev.necauqua.mods.mira.data.SimpleAttribute;
+
 /**
  * An interface describing something <i>sized</i>, meaning it has a size
  * attribute of type double.
@@ -22,7 +24,12 @@ public interface ISized {
     /**
      * @return the size multiplier of this thing
      */
+    @Deprecated
     double getSizeCM();
+
+    default double getSizeCM(SimpleAttribute attribute) {
+        return getSizeCM();
+    }
 
     /**
      * Sets the size of this thing.
@@ -33,5 +40,6 @@ public interface ISized {
      *
      * @param size the size to be set
      */
+    @Deprecated
     void setSizeCM(double size);
 }

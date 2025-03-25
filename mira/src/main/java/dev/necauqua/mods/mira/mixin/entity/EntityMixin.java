@@ -9,16 +9,14 @@ import dev.necauqua.mods.mira.Config;
 import dev.necauqua.mods.mira.Network;
 import dev.necauqua.mods.mira.api.*;
 import dev.necauqua.mods.mira.data.DataSerializerDouble;
+import dev.necauqua.mods.mira.data.MiraAttributes;
+import dev.necauqua.mods.mira.data.SimpleAttribute;
 import dev.necauqua.mods.mira.extras.IEntityExtras;
 import dev.necauqua.mods.mira.size.MixinHelpers;
 import dev.necauqua.mods.mira.size.ResizingProcess;
 import dev.necauqua.mods.mira.size.ScaledParticleData;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntitySize;
-import net.minecraft.entity.MoverType;
-import net.minecraft.entity.Pose;
+import net.minecraft.entity.*;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.particles.IParticleData;
@@ -29,7 +27,6 @@ import net.minecraft.util.math.vector.Vector3d;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeEntity;
-import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.entity.EntityEvent.Size;
 import org.objectweb.asm.Opcodes;
@@ -51,6 +48,7 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     private static final String SIZE_NBT_TAG = "mira:size";
     private static final String OLD_SIZE_NBT_TAG = "chiseled_me:size";
 
+    @Deprecated
     public double $cm$size = 1.0;
     @Shadow
     public World level;
@@ -75,6 +73,12 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     public double getSizeCM(float partialTick) {
         return $cm$process != null ? $cm$process.prevTickSize + ($cm$size - $cm$process.prevTickSize) * partialTick
             : $cm$size;
+    }
+
+    @Override
+    public double getSizeCM(SimpleAttribute attribute, float partialTick) {
+        // TODO: implement
+        return getSizeCM(attribute);
     }
 
     @SuppressWarnings("ConstantConditions") // we *are* the entity class one the mixin is applied, lul
@@ -216,48 +220,59 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     @ModifyVariable(method = "refreshDimensions", at = @At(value = "STORE", ordinal = 0), ordinal = 0)
     EntitySize refreshDimensionsUnScaleSize(EntitySize dimension) {
         // unscale this.dimension before the event
-        return new EntitySize((float) (dimension.width / $cm$size), (float) (dimension.height / $cm$size),
-            dimension.fixed);
+        return new EntitySize(
+                (float) (dimension.width / getSizeCM(MiraAttributes.WIDTH.getFirst().get())),
+                (float) (dimension.height / getSizeCM(MiraAttributes.HEIGHT.getFirst().get())),
+                dimension.fixed
+        );
     }
 
     @ModifyVariable(method = "refreshDimensions", at = @At(value = "STORE", ordinal = 1), ordinal = 1)
     EntitySize refreshDimensionsScaleSize(EntitySize size) {
-        return new EntitySize((float) (size.width * $cm$size), (float) (size.height * $cm$size), size.fixed);
+        return new EntitySize(
+                (float) (size.width * getSizeCM(MiraAttributes.WIDTH.getFirst().get())),
+                (float) (size.height * getSizeCM(MiraAttributes.HEIGHT.getFirst().get())),
+                size.fixed
+        );
     }
 
     @Redirect(method = "refreshDimensions", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;eyeHeight:F", opcode = Opcodes.PUTFIELD))
     void refreshDimensionsScaleEyeHeight(Entity self, float eyeHeight) {
-        this.eyeHeight = (float) (eyeHeight * $cm$size);
+        this.eyeHeight = (float) (eyeHeight * getSizeCM(MiraAttributes.HEIGHT.getFirst().get()));
     }
 
     @ModifyConstant(method = "isInWall", constant = @Constant(doubleValue = 0.10000000149011612D))
     double isInWall(double constant) {
-        return constant * $cm$size;
+        // TODO: check
+        return constant * getSizeCM(MiraAttributes.HEIGHT.getFirst().get());
     }
 
     @ModifyConstant(method = "checkInsideBlocks", constant = @Constant(doubleValue = 0.001))
     double checkInsideBlocks(double constant) {
-        return constant * $cm$size;
+        // TODO: check
+        return constant * getSizeCM(MiraAttributes.HEIGHT.getFirst().get());
     }
 
     @ModifyVariable(method = "getBoundingBoxForPose", at = @At("STORE"))
     float getBoundingBoxForPoseScaleWidth(float f) {
-        return (float) (f * ((ISized) this).getSizeCM());
+        return (float) (f * ((ISized) this).getSizeCM(MiraAttributes.WIDTH.getFirst().get()));
     }
 
     @Redirect(method = "getBoundingBoxForPose", at = @At(value = "FIELD", target = "Lnet/minecraft/entity/EntitySize;height:F"))
     float getBoundingBoxForPoseScaleWidth(EntitySize instance) {
-        return (float) (instance.height * ((ISized) this).getSizeCM());
+        return (float) (instance.height * ((ISized) this).getSizeCM(MiraAttributes.HEIGHT.getFirst().get()));
     }
 
     @ModifyConstant(method = "collide", constant = @Constant(doubleValue = 1.0E-7))
     double collideScaleBBoxDeflation(double constant) {
-        return constant * ((ISized) this).getSizeCM();
+        // TODO: is this an appropriate scale to base this off of?
+        return constant * ((ISized) this).getSizeCM(MiraAttributes.WIDTH.getFirst().get());
     }
 
     @ModifyConstant(method = "getBlockPosBelowThatAffectsMyMovement", constant = @Constant(doubleValue = 0.5000001))
     double getBlockPosBelowThatAffectsMyMovementScaleOffset(double constant) {
-        return constant * ((ISized) this).getSizeCM();
+        // TODO: is this an appropriate scale to base this off of?
+        return constant * ((ISized) this).getSizeCM(MiraAttributes.WIDTH.getFirst().get());
     }
 
     // endregion
@@ -335,7 +350,8 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     @Redirect(method = "push(Lnet/minecraft/entity/Entity;)V", at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/entity/Entity;push(DDD)V"))
     void push(Entity self, double x, double y, double z, Entity other) {
         if ($cm$size < 1.0 && Config.scaleMassSmall.get() || $cm$size > 1.0 && Config.scaleMassBig.get()) {
-            double coeff = ((ISized) other).getSizeCM() / $cm$size;
+            // TODO: should I do width or should I have a specialized scale attribute?
+            double coeff = ((ISized) other).getSizeCM(MiraAttributes.WIDTH.getFirst().get()) / getSizeCM(MiraAttributes.WIDTH.getFirst().get());
             self.push(x * coeff, y * coeff, z * coeff);
         } else {
             self.push(x, y, z);
@@ -344,30 +360,14 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
 
     @Redirect(method = "push(Lnet/minecraft/entity/Entity;)V", at = @At(value = "INVOKE", ordinal = 1, target = "Lnet/minecraft/entity/Entity;push(DDD)V"))
     void push2(Entity self, double x, double y, double z, Entity other) {
-        double otherSize = ((ISized) other).getSizeCM();
+        // TODO: should I do width or should I have a specialized scale attribute?
+        double otherSize = ((ISized) other).getSizeCM(MiraAttributes.WIDTH.getFirst().get());
         if (otherSize < 1.0 && Config.scaleMassSmall.get() || otherSize > 1.0 && Config.scaleMassBig.get()) {
-            double coeff = $cm$size / otherSize;
+            double coeff = getSizeCM(MiraAttributes.WIDTH.getFirst().get()) / otherSize;
             self.push(x * coeff, y * coeff, z * coeff);
         } else {
             self.push(x, y, z);
         }
-    }
-
-    @Inject(method = "load", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;readAdditionalSaveData(Lnet/minecraft/nbt/CompoundNBT;)V"))
-    void load(CompoundNBT nbt, CallbackInfo ci) {
-        // fixup for upgrading from 1.12 if that even makes sense
-        if (nbt.contains(OLD_SIZE_NBT_TAG, NBT.TAG_ANY_NUMERIC)) {
-            setSizeCM(nbt.getDouble(OLD_SIZE_NBT_TAG));
-            return;
-        }
-        if (nbt.contains(SIZE_NBT_TAG, NBT.TAG_ANY_NUMERIC)) {
-            setSizeCM(nbt.getDouble(SIZE_NBT_TAG));
-        }
-    }
-
-    @Inject(method = "saveWithoutId", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;addAdditionalSaveData(Lnet/minecraft/nbt/CompoundNBT;)V"))
-    void saveWithoutId(CompoundNBT nbt, CallbackInfoReturnable<CompoundNBT> cir) {
-        nbt.putDouble(SIZE_NBT_TAG, $cm$process != null ? $cm$process.targetSize : $cm$size);
     }
 
     @ModifyConstant(method = "toString", remap = false, constant = @Constant(ordinal = 0))
@@ -427,5 +427,13 @@ public abstract class EntityMixin implements IRenderSized, IEntityExtras {
     void playSound(World self, @Nullable PlayerEntity player, double x, double y, double z, SoundEvent sound,
                    SoundCategory category, float volume, float pitch) {
         ((IWorldPreciseSounds) self).playSound(null, new Vector3d(x, y, z), sound, category, volume, pitch, $cm$size);
+    }
+
+    @Override
+    public double getSizeCM(SimpleAttribute attribute) {
+        if (((Object) this) instanceof LivingEntity) {
+            return attribute.getValue((LivingEntity) (Object) this);
+        }
+        return $cm$size;
     }
 }

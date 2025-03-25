@@ -1,6 +1,8 @@
 package dev.necauqua.mods.mira;
 
 import dev.necauqua.mods.mira.data.DoubleValue;
+import dev.necauqua.mods.mira.data.MiraAttributes;
+import dev.necauqua.mods.mira.size.MiraModHandler;
 import net.minecraft.particles.ParticleType;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.GameRules;
@@ -37,6 +39,8 @@ public final class Mira {
         Config.init();
 
         PARTICLE_TYPES.register(FMLJavaModLoadingContext.get().getModEventBus());
+        MiraAttributes.register(FMLJavaModLoadingContext.get().getModEventBus());
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(MiraModHandler::on);
     }
 
     public static ResourceLocation ns(String path) {

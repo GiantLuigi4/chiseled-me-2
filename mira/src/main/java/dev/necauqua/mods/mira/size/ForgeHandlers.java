@@ -81,7 +81,7 @@ public final class ForgeHandlers {
         double mountedSize = e.getEntityBeingMounted() != null ? ((ISized) e.getEntityBeingMounted()).getSizeCM() : 1.0;
 
         if ((!Config.allowRidingSameSize.get() || mountingSize != mountedSize)
-            && (mountingSize != 1.0 || mountedSize != 1.0)) {
+                && (mountingSize != 1.0 || mountedSize != 1.0)) {
             e.setCanceled(true);
         }
     }
@@ -165,7 +165,7 @@ public final class ForgeHandlers {
     private static void applyDefaultSize(Entity entity, RuleKey<DoubleValue> rule) {
         try {
             double size = MathHelper.clamp(entity.level.getGameRules().getRule(rule).get(), Mira.LOWER_LIMIT,
-                Mira.UPPER_LIMIT);
+                    Mira.UPPER_LIMIT);
             if (size != 1.0 && ((ISized) entity).getSizeCM() == 1.0) {
                 ((ISized) entity).setSizeCM(size);
             }

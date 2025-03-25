@@ -82,7 +82,7 @@ public final class Network {
                         size = currentSize / 2;
                         break;
                 }
-                sized.setSizeCM(size);
+//                sized.setSizeCM(size);
                 if (size != currentSize) {
                     sized.setSizeCM(size, log2LerpTime(currentSize, size));
                 }

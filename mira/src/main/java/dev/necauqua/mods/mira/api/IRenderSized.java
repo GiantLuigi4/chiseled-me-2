@@ -5,6 +5,7 @@
 
 package dev.necauqua.mods.mira.api;
 
+import dev.necauqua.mods.mira.data.SimpleAttribute;
 import net.minecraft.entity.Entity;
 
 import javax.annotation.Nullable;
@@ -49,7 +50,12 @@ public interface IRenderSized extends ISized {
      * @return the interpolated ("smooth") multiplier of the size when it is
      * resizing, can be used for rendering
      */
+    @Deprecated
     double getSizeCM(float partialTick);
+
+    default double getSizeCM(SimpleAttribute attribute, float partialTick) {
+        return getSizeCM(partialTick);
+    }
 
     /**
      * A shortcut for {@link #setSizeCM(double, int) setEntitySize(size, 0)}.
